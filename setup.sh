@@ -40,5 +40,8 @@ cp $DOTFILES_ROOT/.zshrc $HOME/.zshrc
 printf "$DOTFILES_ROOT/.zshrc copied to $HOME/.zshrc\n"
 source "$HOME/.zshrc"
 
+# Installing startship
+curl -sS https://starship.rs/install.sh | sh
+
 sudo chsh -s "$(which zsh)" "$(whoami)"
 echo "If the default shell changed, you may need to log out and in again for this to take effect."
