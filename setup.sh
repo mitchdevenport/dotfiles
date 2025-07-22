@@ -35,8 +35,13 @@ echo "Done\n"
 
 echo "Setting up zshrc..."
 
-# Installing startship
+
+# Installing starship
 curl -sS https://starship.rs/install.sh | sh
+# Ensure $HOME/.cargo/bin is in PATH for this session
+if [[ ":$PATH:" != *":$HOME/.cargo/bin:"* ]]; then
+  export PATH="$HOME/.cargo/bin:$PATH"
+fi
 
 # copy .zshrc itself
 cp $DOTFILES_ROOT/.zshrc $HOME/.zshrc
