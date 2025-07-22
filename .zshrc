@@ -107,7 +107,4 @@ source $ZSH/oh-my-zsh.sh
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
-# Always add cargo bin to PATH (for starship and other Rust tools)
-export PATH="$HOME/.cargo/bin:$PATH"
-
 eval "$(starship init zsh)"

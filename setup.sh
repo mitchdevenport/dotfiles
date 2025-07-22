@@ -37,11 +37,7 @@ echo "Setting up zshrc..."
 
 
 # Installing starship
-curl -sS https://starship.rs/install.sh | sh
-# Ensure $HOME/.cargo/bin is in PATH for this session
-if [[ ":$PATH:" != *":$HOME/.cargo/bin:"* ]]; then
-  export PATH="$HOME/.cargo/bin:$PATH"
-fi
+curl -sS https://starship.rs/install.sh | sh -s -- -y
 
 # copy .zshrc itself
 cp $DOTFILES_ROOT/.zshrc $HOME/.zshrc
