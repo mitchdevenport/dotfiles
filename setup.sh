@@ -37,7 +37,7 @@ echo "Setting up zshrc..."
 
 
 # Installing starship
-curl -sS https://starship.rs/install.sh | sh -s -- -y
+# curl -sS https://starship.rs/install.sh | sh -s -- -y
 
 # copy .zshrc itself
 cp $DOTFILES_ROOT/.zshrc $HOME/.zshrc
