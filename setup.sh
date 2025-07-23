@@ -46,3 +46,6 @@ source "$HOME/.zshrc"
 
 sudo chsh -s "$(which zsh)" "$(whoami)"
 echo "If the default shell changed, you may need to log out and in again for this to take effect."
+
+# Git Config Setup
+git config --global push.autoSetupRemote true
