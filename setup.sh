@@ -53,5 +53,7 @@ ln -sf "$DOTFILES_ROOT/.bashrc_dotfiles" "$HOME/.bashrc_dotfiles"
 # Source the dotfiles .bashrc if it exists
 echo "source $HOME/.bashrc_dotfiles" >> "$HOME/.bashrc"
 
+source "$HOME/.bashrc"
+
 # Git Config Setup
 git config --global push.autoSetupRemote true
