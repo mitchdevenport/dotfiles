@@ -3,7 +3,7 @@
 # echo "\033[32mMain dotfiles install script started..."
 # echo "\033[0m"
 
-DOTFILES_ROOT=$(exec 2>/dev/null;cd -- $(dirname "$0"); unset PWD; /usr/bin/pwd || /bin/pwd || pwd)
+# DOTFILES_ROOT=$(exec 2>/dev/null;cd -- $(dirname "$0"); unset PWD; /usr/bin/pwd || /bin/pwd || pwd)
 
 # generic_install() {
 #   sudo apt install -o DPkg::Options::="--force-confnew" -y "$1"
@@ -44,13 +44,12 @@ DOTFILES_ROOT=$(exec 2>/dev/null;cd -- $(dirname "$0"); unset PWD; /usr/bin/pwd 
 # printf "$DOTFILES_ROOT/.zshrc copied to $HOME/.zshrc\n"
 # source "$HOME/.zshrc"
 
-# copy .bashrc itself
-cp $DOTFILES_ROOT/.bashrc $HOME/.bashrc
-printf "$DOTFILES_ROOT/.bashrc copied to $HOME/.bashrc\n"
-source "$HOME/.bashrc"
-
 # sudo chsh -s "$(which zsh)" "$(whoami)"
 # echo "If the default shell changed, you may need to log out and in again for this to take effect."
 
 # Git Config Setup
 git config --global push.autoSetupRemote true
+
+alias init-sweagentd='bin/setup-codespaces-copilot-swe-agent && /workspaces/sweagentd/script/docker-self-hosted-runner'
+alias run-sweagentd='cd /workspaces/sweagentd && script/server'
+alias run-capi='script/setup-codespaces-copilot-api && bin/enable-copilot-chat --gh-mcp'
