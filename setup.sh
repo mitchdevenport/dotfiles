@@ -49,8 +49,3 @@
 
 # Git Config Setup
 git config --global push.autoSetupRemote true
-
-alias run-dotcom='/workspace/github/script/server'
-alias run-capi='/workspace/github/script/setup-codespaces-copilot-api && /workspace/github/bin/enable-copilot-chat --gh-mcp'
-alias init-sweagentd='/workspace/github/bin/setup-codespaces-copilot-swe-agent && /workspaces/sweagentd/script/docker-self-hosted-runner'
-alias run-sweagentd='/workspaces/sweagentd/script/server'
