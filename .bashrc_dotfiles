@@ -1,4 +1,0 @@
-alias run-dotcom='/workspaces/github/script/server'
-alias run-capi='/workspaces/github/script/setup-codespaces-copilot-api && /workspaces/github/bin/enable-copilot-chat --gh-mcp'
-alias init-sweagentd='/workspaces/github/bin/setup-codespaces-copilot-swe-agent && /workspaces/sweagentd/script/docker-self-hosted-runner'
-alias run-sweagentd='/workspaces/sweagentd/script/server'
