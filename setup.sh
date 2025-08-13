@@ -3,7 +3,7 @@
 # echo "\033[32mMain dotfiles install script started..."
 # echo "\033[0m"
 
-# DOTFILES_ROOT=$(exec 2>/dev/null;cd -- $(dirname "$0"); unset PWD; /usr/bin/pwd || /bin/pwd || pwd)
+DOTFILES_ROOT=$(exec 2>/dev/null;cd -- $(dirname "$0"); unset PWD; /usr/bin/pwd || /bin/pwd || pwd)
 
 # generic_install() {
 #   sudo apt install -o DPkg::Options::="--force-confnew" -y "$1"
@@ -46,6 +46,12 @@
 
 # sudo chsh -s "$(which zsh)" "$(whoami)"
 # echo "If the default shell changed, you may need to log out and in again for this to take effect."
+
+# Symlink or copy dotfiles
+ln -sf "$DOTFILES_ROOT/.bashrc_dotfiles" "$HOME/.bashrc_dotfiles"
+
+# Source the dotfiles .bashrc if it exists
+echo "source $HOME/.bashrc_dotfiles" >> "$HOME/.bashrc"
 
 # Git Config Setup
 git config --global push.autoSetupRemote true
