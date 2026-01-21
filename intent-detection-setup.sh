@@ -66,29 +66,12 @@ if [ ! -d "/workspaces/github-ui/.git" ]; then
     checkout_and_pull "/workspaces/github-ui" "jasonrclark/intent-detection"
 fi
 
-# Create workspace configuration for VSCode
-log "Creating VSCode workspace configuration..."
-WORKSPACE_FILE="/workspaces/.vscode/workspace.code-workspace"
-mkdir -p "$(dirname "$WORKSPACE_FILE")"
-cat > "$WORKSPACE_FILE" << 'EOF'
-{
-  "folders": [
-    {
-      "path": "/workspaces/github-ui"
-    },
-    {
-      "path": "/workspaces/copilot-api"
-    },
-    {
-      "path": "/workspaces/sweagentd"
-    },
-    {
-      "path": "/workspaces/copilot-mission-control"
-    }
-  ],
-  "settings": {}
-}
-EOF
+# Add folders to VSCode workspace
+log "Adding folders to VSCode workspace..."
+code --add /workspaces/github-ui
+code --add /workspaces/copilot-api
+code --add /workspaces/sweagentd
+code --add /workspaces/copilot-mission-control
 
 # Create startup scripts for each terminal
 log "Creating terminal startup scripts..."
@@ -264,12 +247,57 @@ EOF
 log "Setup README created at /tmp/CODESPACES_SETUP_README.md"
 cat /tmp/CODESPACES_SETUP_README.md
 
+# Open VSCode terminals and run the scripts
+log "Opening VSCode terminals..."
+
+# Terminal 1: github server (will be split)
+code --command "workbench.action.terminal.new"
+sleep 1
+code --command "workbench.action.terminal.sendSequence" --args '{"text":"/tmp/terminal1a.sh\n"}'
+sleep 1
+
+# Split terminal 1 for github-ui
+code --command "workbench.action.terminal.split"
+sleep 1
+code --command "workbench.action.terminal.sendSequence" --args '{"text":"/tmp/terminal1b.sh\n"}'
+sleep 1
+
+# Terminal 2: copilot-api server (new terminal, will be split)
+code --command "workbench.action.terminal.new"
+sleep 1
+code --command "workbench.action.terminal.sendSequence" --args '{"text":"/tmp/terminal2.sh\n"}'
+sleep 1
+
+# Split terminal 2 for sweagentd
+code --command "workbench.action.terminal.split"
+sleep 1
+code --command "workbench.action.terminal.sendSequence" --args '{"text":"/tmp/terminal3.sh\n"}'
+sleep 1
+
+# Split terminal 2 again for copilot-mission-control
+code --command "workbench.action.terminal.split"
+sleep 1
+code --command "workbench.action.terminal.sendSequence" --args '{"text":"/tmp/terminal4.sh\n"}'
+sleep 1
+
+# Terminal 3: workspace (new terminal)
+code --command "workbench.action.terminal.new"
+sleep 1
+code --command "workbench.action.terminal.sendSequence" --args '{"text":"/tmp/terminal5.sh\n"}'
+
 echo ""
 echo "=========================================="
 echo "Intent Detection setup complete!"
 echo "=========================================="
 echo ""
-echo "To start all services, run:"
+echo "VSCode terminals have been opened and services are starting!"
+echo ""
+echo "Terminal layout:"
+echo "  Terminal 1: github server | github-ui workspace (split)"
+echo "  Terminal 2: copilot-api | sweagentd | copilot-mission-control (3-way split)"
+echo "  Terminal 3: workspace"
+echo ""
+echo "Alternatively, use tmux:"
 echo "  /tmp/start-services.sh"
 echo "  tmux attach -t codespaces"
 echo ""
