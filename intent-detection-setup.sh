@@ -76,31 +76,31 @@ else
     log "Phase 1: Adding folders to VSCode workspace..."
     log "Note: VSCode will reload after adding folders"
 
-    # Create a script that will auto-run after reload
-    cat > /tmp/auto-rerun-setup.sh << 'EOF'
-#!/usr/bin/env bash
-
-# Guard against multiple executions
-GUARD_FILE="/tmp/intent-detection-auto-rerun-executed"
-if [ -f "$GUARD_FILE" ]; then
-    exit 0
-fi
-touch "$GUARD_FILE"
-
-sleep 3
-
-# Open a new terminal and run phase 2 there so output is visible
-code --command "workbench.action.terminal.new"
-sleep 2
-code --command "workbench.action.terminal.sendSequence" --args '{"text":"/workspaces/.codespaces/.persistedshare/dotfiles/intent-detection-setup.sh\n"}'
-EOF
-    chmod +x /tmp/auto-rerun-setup.sh
-
-    # Add the auto-rerun to bashrc temporarily (will run in background)
-    echo "/tmp/auto-rerun-setup.sh &" >> "$HOME/.bashrc"
-
     # Mark that we're ready for phase 2
     touch "$PHASE2_MARKER"
+
+    # Create tasks.json for VSCode to run phase 2 automatically
+    log "Creating VSCode tasks configuration..."
+    mkdir -p /workspaces/github/.vscode
+    cat > /workspaces/github/.vscode/tasks.json << 'EOF'
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Continue Intent Detection Setup",
+            "type": "shell",
+            "command": "/workspaces/.codespaces/.persistedshare/dotfiles/intent-detection-setup.sh",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
+        }
+    ]
+}
+EOF
 
     # Add all folders (this will cause reload)
     log "Adding workspace folders (will trigger reload)..."
@@ -115,15 +115,16 @@ EOF
     echo "=========================================="
     echo ""
     echo "VSCode is reloading with new workspace folders..."
-    echo "The script will automatically continue after reload."
+    echo "After reload, you will be prompted to run the continuation task."
+    echo "Click 'Run Task' when prompted to continue setup."
     echo ""
 
     exit 0
 fi
 
-# Clean up the auto-rerun from bashrc and guard file
-sed -i '/auto-rerun-setup.sh/d' "$HOME/.bashrc" 2>/dev/null || true
-rm -f /tmp/intent-detection-auto-rerun-executed
+# Clean up the tasks.json that triggered phase 2
+log "Cleaning up auto-run task configuration..."
+rm -f /workspaces/github/.vscode/tasks.json
 
 # Enable feature flags now (setup script already ran above)
 log "Enabling feature flags..."
@@ -299,58 +300,185 @@ EOF
 log "Setup README created at /tmp/CODESPACES_SETUP_README.md"
 cat /tmp/CODESPACES_SETUP_README.md
 
-# Open VSCode terminals and run the scripts
-log "Opening VSCode terminals..."
+# Create tasks.json to start all services
+log "Creating VSCode tasks for starting services..."
+mkdir -p /workspaces/github/.vscode
+cat > /workspaces/github/.vscode/tasks.json << 'EOF'
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Start All Services",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Start GitHub Server",
+                "Start Copilot API",
+                "Start SWE Agent",
+                "Start Mission Control",
+                "Open Workspace Terminal",
+                "Cleanup Tasks"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Start GitHub Server",
+            "type": "shell",
+            "command": "/tmp/terminal1a.sh",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "group": "services"
+            },
+            "isBackground": true,
+            "problemMatcher": {
+                "pattern": {
+                    "regexp": "^$"
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": ".*",
+                    "endsPattern": "^$"
+                }
+            }
+        },
+        {
+            "label": "Start Copilot API",
+            "type": "shell",
+            "command": "/tmp/terminal2.sh",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "group": "services"
+            },
+            "isBackground": true,
+            "problemMatcher": {
+                "pattern": {
+                    "regexp": "^$"
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": ".*",
+                    "endsPattern": "^$"
+                }
+            }
+        },
+        {
+            "label": "Start SWE Agent",
+            "type": "shell",
+            "command": "/tmp/terminal3.sh",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "group": "services"
+            },
+            "isBackground": true,
+            "problemMatcher": {
+                "pattern": {
+                    "regexp": "^$"
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": ".*",
+                    "endsPattern": "^$"
+                }
+            }
+        },
+        {
+            "label": "Start Mission Control",
+            "type": "shell",
+            "command": "/tmp/terminal4.sh",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "group": "services"
+            },
+            "isBackground": true,
+            "problemMatcher": {
+                "pattern": {
+                    "regexp": "^$"
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": ".*",
+                    "endsPattern": "^$"
+                }
+            }
+        },
+        {
+            "label": "Open Workspace Terminal",
+            "type": "shell",
+            "command": "/tmp/terminal5.sh",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "group": "workspace"
+            },
+            "isBackground": true,
+            "problemMatcher": {
+                "pattern": {
+                    "regexp": "^$"
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": ".*",
+                    "endsPattern": "^$"
+                }
+            }
+        },
+        {
+            "label": "Cleanup Tasks",
+            "type": "shell",
+            "command": "rm -f /workspaces/github/.vscode/tasks.json",
+            "presentation": {
+                "reveal": "never",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        }
+    ]
+}
+EOF
 
-# Terminal 1: github server (will be split)
-code --command "workbench.action.terminal.new"
-sleep 1
-code --command "workbench.action.terminal.sendSequence" --args '{"text":"/tmp/terminal1a.sh\n"}'
-sleep 1
+# Create a script that will trigger the task automatically
+log "Creating auto-start script..."
+cat > /tmp/auto-start-services.sh << 'EOF'
+#!/usr/bin/env bash
+sleep 2
+cd /workspaces/github
 
-# Split terminal 1 for github-ui
-code --command "workbench.action.terminal.split"
-sleep 1
-code --command "workbench.action.terminal.sendSequence" --args '{"text":"/tmp/terminal1b.sh\n"}'
-sleep 1
+# Use npm to run the VSCode task via CLI
+# This is a workaround since we can't directly invoke VSCode tasks from shell
+if command -v code &> /dev/null; then
+    # Try to run the task using VSCode CLI task runner
+    npm run vscode:task:start-all-services 2>/dev/null || {
+        # Fallback: Just run the tmux script directly
+        /tmp/start-services.sh
+        echo ""
+        echo "Services started in tmux. Run 'tmux attach -t codespaces' to view."
+    }
+else
+    # VSCode CLI not available, use tmux
+    /tmp/start-services.sh
+    echo ""
+    echo "Services started in tmux. Run 'tmux attach -t codespaces' to view."
+fi
 
-# Terminal 2: copilot-api server (new terminal, will be split)
-code --command "workbench.action.terminal.new"
-sleep 1
-code --command "workbench.action.terminal.sendSequence" --args '{"text":"/tmp/terminal2.sh\n"}'
-sleep 1
-
-# Split terminal 2 for sweagentd
-code --command "workbench.action.terminal.split"
-sleep 1
-code --command "workbench.action.terminal.sendSequence" --args '{"text":"/tmp/terminal3.sh\n"}'
-sleep 1
-
-# Split terminal 2 again for copilot-mission-control
-code --command "workbench.action.terminal.split"
-sleep 1
-code --command "workbench.action.terminal.sendSequence" --args '{"text":"/tmp/terminal4.sh\n"}'
-sleep 1
-
-# Terminal 3: workspace (new terminal)
-code --command "workbench.action.terminal.new"
-sleep 1
-code --command "workbench.action.terminal.sendSequence" --args '{"text":"/tmp/terminal5.sh\n"}'
+EOF
+chmod +x /tmp/auto-start-services.sh
 
 echo ""
 echo "=========================================="
 echo "Intent Detection setup complete!"
 echo "=========================================="
 echo ""
-echo "VSCode terminals have been opened and services are starting!"
+log "Starting all services automatically..."
+
+# Start services in the background
+/tmp/auto-start-services.sh &
+
+echo "Services are starting in the background..."
 echo ""
-echo "Terminal layout:"
-echo "  Terminal 1: github server | github-ui workspace (split)"
-echo "  Terminal 2: copilot-api | sweagentd | copilot-mission-control (3-way split)"
-echo "  Terminal 3: workspace"
-echo ""
-echo "Alternatively, use tmux:"
-echo "  /tmp/start-services.sh"
+echo "To view services in tmux:"
 echo "  tmux attach -t codespaces"
 echo ""
 echo "For more information, see: /tmp/CODESPACES_SETUP_README.md"
