@@ -22,59 +22,17 @@ checkout_and_pull() {
     cd - > /dev/null
 }
 
-# Add global environment variables to shell profile FIRST
-# This needs to be done early so subsequent commands can use these variables
-log "Adding global environment variables..."
-if ! grep -q "Copilot Mission Control Environment" "$HOME/.bashrc" 2>/dev/null; then
-    cat >> "$HOME/.bashrc" << 'EOF'
-
-# Copilot Mission Control Environment
-export USER_TOKEN=$MONALISA_PAT
-export SESSIONS_API_BASE_URL=http://localhost:2210/api/v1/agents
-alias s='script/sessions-api --localhost 2210'
-EOF
-fi
-
-# Source the updated bashrc for current session
-export USER_TOKEN=$MONALISA_PAT
-export SESSIONS_API_BASE_URL=http://localhost:2210/api/v1/agents
-
-# Checkout and pull jasonrclark/intent-detection in github-ui (if it exists)
-if [ -d "/workspaces/github-ui" ]; then
-    log "Setting up github-ui repository..."
-    checkout_and_pull "/workspaces/github-ui" "jasonrclark/intent-detection"
-else
-    log "Skipping github-ui setup - directory doesn't exist yet"
-fi
-
-# Run the setup script that creates the other repositories
-log "Running setup-codespaces-copilot-swe-agent-v2 --capi..."
-log "This will clone copilot-api, sweagentd, and copilot-mission-control repositories..."
-cd /workspaces/github
-script/setup-codespaces-copilot-swe-agent-v2 --capi
-
-# Now that repositories exist, checkout the required branches
-log "Setting up copilot-api repository..."
-checkout_and_pull "/workspaces/copilot-api" "jasonrclark/stream-chat-to-session-logs"
-
-log "Setting up copilot-mission-control repository..."
-checkout_and_pull "/workspaces/copilot-mission-control" "mitchdevenport/intent-detection-poc"
-
-# Now checkout github-ui if we skipped it earlier
-if [ ! -d "/workspaces/github-ui/.git" ]; then
-    log "Setting up github-ui repository (second attempt)..."
-    checkout_and_pull "/workspaces/github-ui" "jasonrclark/intent-detection"
-fi
-
 # Check if we're in phase 2 (after workspace reload)
 PHASE2_MARKER="/tmp/intent-detection-setup-phase2"
 
 if [ -f "$PHASE2_MARKER" ]; then
     log "Phase 2: Continuing after workspace reload..."
     rm "$PHASE2_MARKER"
+    # Clean up the tasks.json that triggered phase 2
+    rm -f /workspaces/github/.vscode/tasks.json
 else
-    log "Phase 1: Adding folders to VSCode workspace..."
-    log "Note: VSCode will reload after adding folders"
+    log "Phase 1: Adding github-ui to workspace..."
+    log "Note: VSCode will reload after adding the first folder"
 
     # Mark that we're ready for phase 2
     touch "$PHASE2_MARKER"
@@ -102,19 +60,16 @@ else
 }
 EOF
 
-    # Add all folders (this will cause reload)
-    log "Adding workspace folders (will trigger reload)..."
+    # Add github-ui folder (this will cause reload)
+    log "Adding github-ui to workspace (will trigger reload)..."
     code --add /workspaces/github-ui
-    code --add /workspaces/copilot-api
-    code --add /workspaces/sweagentd
-    code --add /workspaces/copilot-mission-control
 
     echo ""
     echo "=========================================="
     echo "Phase 1 Complete"
     echo "=========================================="
     echo ""
-    echo "VSCode is reloading with new workspace folders..."
+    echo "VSCode is reloading with github-ui workspace folder..."
     echo "After reload, you will be prompted to run the continuation task."
     echo "Click 'Run Task' when prompted to continue setup."
     echo ""
@@ -122,9 +77,45 @@ EOF
     exit 0
 fi
 
-# Clean up the tasks.json that triggered phase 2
-log "Cleaning up auto-run task configuration..."
-rm -f /workspaces/github/.vscode/tasks.json
+# Add global environment variables to shell profile FIRST
+# This needs to be done early so subsequent commands can use these variables
+log "Adding global environment variables..."
+if ! grep -q "Copilot Mission Control Environment" "$HOME/.bashrc" 2>/dev/null; then
+    cat >> "$HOME/.bashrc" << 'EOF'
+
+# Copilot Mission Control Environment
+export USER_TOKEN=$MONALISA_PAT
+export SESSIONS_API_BASE_URL=http://localhost:2210/api/v1/agents
+alias s='script/sessions-api --localhost 2210'
+EOF
+fi
+
+# Source the updated bashrc for current session
+export USER_TOKEN=$MONALISA_PAT
+export SESSIONS_API_BASE_URL=http://localhost:2210/api/v1/agents
+
+# Checkout and pull jasonrclark/intent-detection in github-ui
+log "Setting up github-ui repository..."
+checkout_and_pull "/workspaces/github-ui" "jasonrclark/intent-detection"
+
+# Run the setup script that creates the other repositories
+log "Running setup-codespaces-copilot-swe-agent-v2 --capi..."
+log "This will clone copilot-api, sweagentd, and copilot-mission-control repositories..."
+cd /workspaces/github
+script/setup-codespaces-copilot-swe-agent-v2 --capi
+
+# Now that repositories exist, checkout the required branches
+log "Setting up copilot-api repository..."
+checkout_and_pull "/workspaces/copilot-api" "jasonrclark/stream-chat-to-session-logs"
+
+log "Setting up copilot-mission-control repository..."
+checkout_and_pull "/workspaces/copilot-mission-control" "mitchdevenport/intent-detection-poc"
+
+# Add remaining workspace folders (these won't trigger reload)
+log "Adding remaining workspace folders..."
+code --add /workspaces/copilot-api
+code --add /workspaces/sweagentd
+code --add /workspaces/copilot-mission-control
 
 # Enable feature flags now (setup script already ran above)
 log "Enabling feature flags..."
@@ -300,183 +291,16 @@ EOF
 log "Setup README created at /tmp/CODESPACES_SETUP_README.md"
 cat /tmp/CODESPACES_SETUP_README.md
 
-# Create tasks.json to start all services
-log "Creating VSCode tasks for starting services..."
-mkdir -p /workspaces/github/.vscode
-cat > /workspaces/github/.vscode/tasks.json << 'EOF'
-{
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "Start All Services",
-            "dependsOrder": "sequence",
-            "dependsOn": [
-                "Start GitHub Server",
-                "Start Copilot API",
-                "Start SWE Agent",
-                "Start Mission Control",
-                "Open Workspace Terminal",
-                "Cleanup Tasks"
-            ],
-            "problemMatcher": []
-        },
-        {
-            "label": "Start GitHub Server",
-            "type": "shell",
-            "command": "/tmp/terminal1a.sh",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "group": "services"
-            },
-            "isBackground": true,
-            "problemMatcher": {
-                "pattern": {
-                    "regexp": "^$"
-                },
-                "background": {
-                    "activeOnStart": true,
-                    "beginsPattern": ".*",
-                    "endsPattern": "^$"
-                }
-            }
-        },
-        {
-            "label": "Start Copilot API",
-            "type": "shell",
-            "command": "/tmp/terminal2.sh",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "group": "services"
-            },
-            "isBackground": true,
-            "problemMatcher": {
-                "pattern": {
-                    "regexp": "^$"
-                },
-                "background": {
-                    "activeOnStart": true,
-                    "beginsPattern": ".*",
-                    "endsPattern": "^$"
-                }
-            }
-        },
-        {
-            "label": "Start SWE Agent",
-            "type": "shell",
-            "command": "/tmp/terminal3.sh",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "group": "services"
-            },
-            "isBackground": true,
-            "problemMatcher": {
-                "pattern": {
-                    "regexp": "^$"
-                },
-                "background": {
-                    "activeOnStart": true,
-                    "beginsPattern": ".*",
-                    "endsPattern": "^$"
-                }
-            }
-        },
-        {
-            "label": "Start Mission Control",
-            "type": "shell",
-            "command": "/tmp/terminal4.sh",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "group": "services"
-            },
-            "isBackground": true,
-            "problemMatcher": {
-                "pattern": {
-                    "regexp": "^$"
-                },
-                "background": {
-                    "activeOnStart": true,
-                    "beginsPattern": ".*",
-                    "endsPattern": "^$"
-                }
-            }
-        },
-        {
-            "label": "Open Workspace Terminal",
-            "type": "shell",
-            "command": "/tmp/terminal5.sh",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "group": "workspace"
-            },
-            "isBackground": true,
-            "problemMatcher": {
-                "pattern": {
-                    "regexp": "^$"
-                },
-                "background": {
-                    "activeOnStart": true,
-                    "beginsPattern": ".*",
-                    "endsPattern": "^$"
-                }
-            }
-        },
-        {
-            "label": "Cleanup Tasks",
-            "type": "shell",
-            "command": "rm -f /workspaces/github/.vscode/tasks.json",
-            "presentation": {
-                "reveal": "never",
-                "panel": "shared"
-            },
-            "problemMatcher": []
-        }
-    ]
-}
-EOF
-
-# Create a script that will trigger the task automatically
-log "Creating auto-start script..."
-cat > /tmp/auto-start-services.sh << 'EOF'
-#!/usr/bin/env bash
-sleep 2
-cd /workspaces/github
-
-# Use npm to run the VSCode task via CLI
-# This is a workaround since we can't directly invoke VSCode tasks from shell
-if command -v code &> /dev/null; then
-    # Try to run the task using VSCode CLI task runner
-    npm run vscode:task:start-all-services 2>/dev/null || {
-        # Fallback: Just run the tmux script directly
-        /tmp/start-services.sh
-        echo ""
-        echo "Services started in tmux. Run 'tmux attach -t codespaces' to view."
-    }
-else
-    # VSCode CLI not available, use tmux
-    /tmp/start-services.sh
-    echo ""
-    echo "Services started in tmux. Run 'tmux attach -t codespaces' to view."
-fi
-
-EOF
-chmod +x /tmp/auto-start-services.sh
+# Start all services automatically
+log "Starting all services..."
+/tmp/start-services.sh
 
 echo ""
 echo "=========================================="
 echo "Intent Detection setup complete!"
 echo "=========================================="
 echo ""
-log "Starting all services automatically..."
-
-# Start services in the background
-/tmp/auto-start-services.sh &
-
-echo "Services are starting in the background..."
+echo "All services have been started in tmux."
 echo ""
 echo "To view services in tmux:"
 echo "  tmux attach -t codespaces"
