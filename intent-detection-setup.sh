@@ -2,8 +2,8 @@
 
 set -e
 
-LOG_FILE="/tmp/codespaces-startup.log"
-echo "Starting GitHub Codespaces setup..." | tee -a "$LOG_FILE"
+LOG_FILE="/tmp/intent-detection-setup.log"
+echo "Starting Intent Detection setup..." | tee -a "$LOG_FILE"
 
 # Function to log with timestamp
 log() {
@@ -249,7 +249,7 @@ cat /tmp/CODESPACES_SETUP_README.md
 
 echo ""
 echo "=========================================="
-echo "GitHub Codespaces setup complete!"
+echo "Intent Detection setup complete!"
 echo "=========================================="
 echo ""
 echo "To start all services, run:"
