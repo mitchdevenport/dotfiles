@@ -80,11 +80,15 @@ else
     cat > /tmp/auto-rerun-setup.sh << 'EOF'
 #!/usr/bin/env bash
 sleep 3
-/workspaces/.codespaces/.persistedshare/dotfiles/intent-detection-setup.sh
+
+# Open a new terminal and run phase 2 there so output is visible
+code --command "workbench.action.terminal.new"
+sleep 2
+code --command "workbench.action.terminal.sendSequence" --args '{"text":"/workspaces/.codespaces/.persistedshare/dotfiles/intent-detection-setup.sh\n"}'
 EOF
     chmod +x /tmp/auto-rerun-setup.sh
 
-    # Add the auto-rerun to bashrc temporarily
+    # Add the auto-rerun to bashrc temporarily (will run in background)
     echo "/tmp/auto-rerun-setup.sh &" >> "$HOME/.bashrc"
 
     # Mark that we're ready for phase 2
