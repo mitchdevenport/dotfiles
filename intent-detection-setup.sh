@@ -79,6 +79,14 @@ else
     # Create a script that will auto-run after reload
     cat > /tmp/auto-rerun-setup.sh << 'EOF'
 #!/usr/bin/env bash
+
+# Guard against multiple executions
+GUARD_FILE="/tmp/intent-detection-auto-rerun-executed"
+if [ -f "$GUARD_FILE" ]; then
+    exit 0
+fi
+touch "$GUARD_FILE"
+
 sleep 3
 
 # Open a new terminal and run phase 2 there so output is visible
@@ -113,8 +121,9 @@ EOF
     exit 0
 fi
 
-# Clean up the auto-rerun from bashrc
+# Clean up the auto-rerun from bashrc and guard file
 sed -i '/auto-rerun-setup.sh/d' "$HOME/.bashrc" 2>/dev/null || true
+rm -f /tmp/intent-detection-auto-rerun-executed
 
 # Enable feature flags now (setup script already ran above)
 log "Enabling feature flags..."
