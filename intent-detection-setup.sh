@@ -22,10 +22,6 @@ checkout_and_pull() {
     cd - > /dev/null
 }
 
-# Checkout and pull jasonrclark/intent-detection in github-ui
-log "Setting up github-ui repository..."
-checkout_and_pull "/workspaces/github-ui" "jasonrclark/intent-detection"
-
 # Add global environment variables to shell profile FIRST
 # This needs to be done early so subsequent commands can use these variables
 log "Adding global environment variables..."
@@ -42,6 +38,33 @@ fi
 # Source the updated bashrc for current session
 export USER_TOKEN=$MONALISA_PAT
 export SESSIONS_API_BASE_URL=http://localhost:2210/api/v1/agents
+
+# Checkout and pull jasonrclark/intent-detection in github-ui (if it exists)
+if [ -d "/workspaces/github-ui" ]; then
+    log "Setting up github-ui repository..."
+    checkout_and_pull "/workspaces/github-ui" "jasonrclark/intent-detection"
+else
+    log "Skipping github-ui setup - directory doesn't exist yet"
+fi
+
+# Run the setup script that creates the other repositories
+log "Running setup-codespaces-copilot-swe-agent-v2 --capi..."
+log "This will clone copilot-api, sweagentd, and copilot-mission-control repositories..."
+cd /workspaces/github
+script/setup-codespaces-copilot-swe-agent-v2 --capi
+
+# Now that repositories exist, checkout the required branches
+log "Setting up copilot-api repository..."
+checkout_and_pull "/workspaces/copilot-api" "jasonrclark/stream-chat-to-session-logs"
+
+log "Setting up copilot-mission-control repository..."
+checkout_and_pull "/workspaces/copilot-mission-control" "mitchdevenport/intent-detection-poc"
+
+# Now checkout github-ui if we skipped it earlier
+if [ ! -d "/workspaces/github-ui/.git" ]; then
+    log "Setting up github-ui repository (second attempt)..."
+    checkout_and_pull "/workspaces/github-ui" "jasonrclark/intent-detection"
+fi
 
 # Create workspace configuration for VSCode
 log "Creating VSCode workspace configuration..."
@@ -70,13 +93,9 @@ EOF
 # Create startup scripts for each terminal
 log "Creating terminal startup scripts..."
 
-# Terminal 1a: github workspace (runs setup and feature flags, then starts server)
-cat > /tmp/terminal1a.sh << 'EOF'
-#!/usr/bin/env bash
+# Enable feature flags now (setup script already ran above)
+log "Enabling feature flags..."
 cd /workspaces/github
-script/setup-codespaces-copilot-swe-agent-v2 --capi
-
-# Enable feature flags
 fm feature enable --create -n copilot_mission_control_service_proxy
 fm feature enable --create -n copilot_agent_task_api
 fm feature enable --create -n repo_agents_view
@@ -87,6 +106,10 @@ fm feature enable --create -n mission_control_use_tool_header_icons
 fm feature enable --create -n copilot_intent_detection
 fm feature enable --create -n copilot_swe_agent_skip_agent_job_concurrency_limit
 
+# Terminal 1a: github workspace (starts server)
+cat > /tmp/terminal1a.sh << 'EOF'
+#!/usr/bin/env bash
+cd /workspaces/github
 script/dx/server-stop
 script/server --ui
 EOF
@@ -101,9 +124,6 @@ EOF
 chmod +x /tmp/terminal1b.sh
 
 # Terminal 2: copilot-api server
-log "Setting up copilot-api repository..."
-checkout_and_pull "/workspaces/copilot-api" "jasonrclark/stream-chat-to-session-logs"
-
 cat > /tmp/terminal2.sh << 'EOF'
 #!/usr/bin/env bash
 cd /workspaces/copilot-api
@@ -120,10 +140,7 @@ script/server
 EOF
 chmod +x /tmp/terminal3.sh
 
-# Terminal 4: copilot-mission-control server
-log "Setting up copilot-mission-control repository..."
-checkout_and_pull "/workspaces/copilot-mission-control" "mitchdevenport/intent-detection-poc"
-
+# Terminal 4: copilot-mission-control - initialize and configure
 log "Initializing copilot-mission-control (running make run and make stop)..."
 cd /workspaces/copilot-mission-control
 make run || true
