@@ -66,15 +66,51 @@ if [ ! -d "/workspaces/github-ui/.git" ]; then
     checkout_and_pull "/workspaces/github-ui" "jasonrclark/intent-detection"
 fi
 
-# Add folders to VSCode workspace
-log "Adding folders to VSCode workspace..."
-code --add /workspaces/github-ui
-code --add /workspaces/copilot-api
-code --add /workspaces/sweagentd
-code --add /workspaces/copilot-mission-control
+# Check if we're in phase 2 (after workspace reload)
+PHASE2_MARKER="/tmp/intent-detection-setup-phase2"
 
-# Create startup scripts for each terminal
-log "Creating terminal startup scripts..."
+if [ -f "$PHASE2_MARKER" ]; then
+    log "Phase 2: Continuing after workspace reload..."
+    rm "$PHASE2_MARKER"
+else
+    log "Phase 1: Adding folders to VSCode workspace..."
+    log "Note: VSCode will reload after adding folders"
+
+    # Create a script that will auto-run after reload
+    cat > /tmp/auto-rerun-setup.sh << 'EOF'
+#!/usr/bin/env bash
+sleep 3
+/workspaces/.codespaces/.persistedshare/dotfiles/intent-detection-setup.sh
+EOF
+    chmod +x /tmp/auto-rerun-setup.sh
+
+    # Add the auto-rerun to bashrc temporarily
+    echo "/tmp/auto-rerun-setup.sh &" >> "$HOME/.bashrc"
+
+    # Mark that we're ready for phase 2
+    touch "$PHASE2_MARKER"
+
+    # Add all folders (this will cause reload)
+    log "Adding workspace folders (will trigger reload)..."
+    code --add /workspaces/github-ui
+    code --add /workspaces/copilot-api
+    code --add /workspaces/sweagentd
+    code --add /workspaces/copilot-mission-control
+
+    echo ""
+    echo "=========================================="
+    echo "Phase 1 Complete"
+    echo "=========================================="
+    echo ""
+    echo "VSCode is reloading with new workspace folders..."
+    echo "The script will automatically continue after reload."
+    echo ""
+
+    exit 0
+fi
+
+# Clean up the auto-rerun from bashrc
+sed -i '/auto-rerun-setup.sh/d' "$HOME/.bashrc" 2>/dev/null || true
 
 # Enable feature flags now (setup script already ran above)
 log "Enabling feature flags..."
@@ -88,6 +124,9 @@ fm feature enable --create -n copilot_swe_agent_ai_name_generation
 fm feature enable --create -n mission_control_use_tool_header_icons
 fm feature enable --create -n copilot_intent_detection
 fm feature enable --create -n copilot_swe_agent_skip_agent_job_concurrency_limit
+
+# Create startup scripts for each terminal
+log "Creating terminal startup scripts..."
 
 # Terminal 1a: github workspace (starts server)
 cat > /tmp/terminal1a.sh << 'EOF'
