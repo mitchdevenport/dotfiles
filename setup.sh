@@ -43,7 +43,10 @@ cat > ~/.copilot/config.json << 'EOF'
   },
   "staff": true,
   "experimental": true,
-  "banner": "never"
+  "banner": "never",
+  "log_level": "all",
+  "model": "claude-opus-4.6-1m",
+  "reasoning_effort": "high"
 }
 EOF
 
