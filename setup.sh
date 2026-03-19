@@ -8,7 +8,7 @@ git config --global push.autoSetupRemote true
 # Install Claude Code CLI
 echo "Installing Claude Code CLI..."
 if ! command -v claude &> /dev/null; then
-    npm install -g @anthropic-ai/claude-cli
+    npm install -g @anthropic-ai/claude-code || echo "Warning: Failed to install Claude Code CLI"
 else
     echo "Claude CLI already installed"
 fi
@@ -16,7 +16,7 @@ fi
 # Install OpenAI Codex CLI
 echo "Installing OpenAI Codex CLI..."
 if ! command -v codex &> /dev/null; then
-    npm install -g openai-codex-cli
+    npm install -g @openai/codex || echo "Warning: Failed to install OpenAI Codex CLI"
 else
     echo "OpenAI Codex CLI already installed"
 fi
@@ -24,7 +24,7 @@ fi
 # Install GitHub Copilot CLI
 echo "Installing GitHub Copilot CLI..."
 if ! command -v copilot &> /dev/null; then
-    npm install -g @github/copilot@prerelease
+    npm install -g @github/copilot@prerelease || echo "Warning: Failed to install Copilot CLI"
 else
     echo "Copilot CLI already installed"
 fi
